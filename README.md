@@ -16,4 +16,4 @@ Allows you to use variables defined in a .env file in swift in a secure way. Hea
 
 ## Notes about security
 
-While this is for sure an improvement to your normal, plain-text based flow, this doesn't guarantee that your keys won't be reverse-engineered. If you want to learn more about secret management and it's security, I recomend you to read the whole article I linked at the top of the Readme: NSHipster article regarding secret management
+While this is for sure an improvement to your normal, plain-text based flow, this doesn't guarantee that your keys won't be reverse-engineered. If you want to learn more about secret management and it's security, I recomend you to read the whole article I linked at the top of the Readme: [NSHipster article regarding secret management](https://nshipster.com/secrets/).
