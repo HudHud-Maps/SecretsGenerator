@@ -18,9 +18,8 @@ struct SecretsGenerator: ParsableCommand {
 	)
 
 	@Option(help: "The .env file used to generate the files.")
-	var input: URL = URL(filePath: ".env",
-						 directoryHint: .notDirectory,
-						 relativeTo: URL(fileURLWithPath: FileManager.default.currentDirectoryPath))
+	var input: URL = URL(fileURLWithPath: ".env",
+						 relativeTo: FileManager.default.currentDirectoryURL)
 
 	@Option(help: "Output url of the generated file.")
 	var output: URL
