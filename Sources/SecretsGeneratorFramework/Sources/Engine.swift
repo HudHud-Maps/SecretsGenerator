@@ -14,7 +14,6 @@ public struct Engine {
 
 	public func run(input: URL, output: URL) throws {
 		let dict = try Dotenv().parse(url: input)
-		print(dict)
 
 		let secrets = dict.map {
 			return Secret(name: $0.key.toCamelCase(), value: $0.value)
