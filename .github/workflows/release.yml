@@ -1,0 +1,92 @@
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*'
+      - '*.*.*'
+
+permissions:
+  contents: write  # needed to publish releases and upload assets
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  macos-build:
+    name: Build macOS
+    runs-on: macos-15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Packages
+        run: |
+          swift package resolve
+
+      - name: Build arm64
+        run: |
+          swift build -c release --arch arm64
+
+      - name: Build x86_64
+        run: |
+          swift build -c release --arch x86_64
+
+      - name: Merge universal binary
+        run: |
+          lipo -create -output .build/release/SecretsGenerator \
+            .build/arm64-apple-macosx/release/SecretsGenerator \
+            .build/x86_64-apple-macosx/release/SecretsGenerator
+
+      - name: Check architecture
+        run: lipo -info .build/release/SecretsGenerator
+
+      - name: Run SecretsGenerator
+        run: .build/release/SecretsGenerator --version
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SecretsGenerator-macOS
+          path: .build/release/SecretsGenerator
+
+  create-release:
+    name: Create GitHub Release
+    needs: [macos-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SecretsGenerator-macOS
+          path: downloads/SecretsGenerator-macOS
+
+      - name: Make binaries executable
+        run: |
+          chmod +x downloads/SecretsGenerator-macOS/SecretsGenerator
+
+      - name: List Downloads
+        run: ls -R downloads
+
+      - name: Package Binaries
+        run: |
+          mkdir -p artifacts
+          zip -j artifacts/SecretsGenerator.zip downloads/SecretsGenerator-macOS/SecretsGenerator
+
+      - name: List artifacts
+        run: ls -R artifacts
+
+      - name: Create Release & Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/SecretsGenerator.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

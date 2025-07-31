@@ -1,0 +1,33 @@
+name: Pull Request
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build macOS
+    runs-on: macos-15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Packages
+        run: |
+          swift package resolve
+
+      - name: Build arm64
+        run: |
+          swift build -c release
+
+      - name: Run SecretsGenerator
+        run: |
+          .build/release/SecretsGenerator --version
