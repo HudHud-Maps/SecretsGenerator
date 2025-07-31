@@ -48,6 +48,9 @@ jobs:
       - name: Check architecture
         run: lipo -info .build/release/SecretsGenerator
 
+      - name: git status
+        run: git status
+
       - name: Run SecretsGenerator
         run: .build/release/SecretsGenerator --version
 
