@@ -1,6 +1,15 @@
 {
-  "originHash" : "580c3626b35dfeee4ae620d029e6a5434db3339bd32b3d15ba7124f0f8dab23d",
+  "originHash" : "a261ce9ff1a13b28208c9ec1c5d55c89008721e8662fddc5eee2f596c76bb0c2",
   "pins" : [
+    {
+      "identity" : "packagebuildinfo",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/DimaRU/PackageBuildInfo",
+      "state" : {
+        "branch" : "master",
+        "revision" : "b58288cada24fdaaedaaa329afe52d910794fdb2"
+      }
+    },
     {
       "identity" : "pathkit",
       "kind" : "remoteSourceControl",
@@ -35,6 +44,15 @@
       "state" : {
         "revision" : "41982a3656a71c768319979febd796c6fd111d5c",
         "version" : "1.5.0"
+      }
+    },
+    {
+      "identity" : "swiftlintplugin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/SwiftLintPlugin",
+      "state" : {
+        "revision" : "3780efccceaa87f17ec39638a9d263d0e742b71c",
+        "version" : "0.59.1"
       }
     }
   ],

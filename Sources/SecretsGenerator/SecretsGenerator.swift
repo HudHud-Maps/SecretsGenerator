@@ -14,7 +14,7 @@ struct SecretsGenerator: ParsableCommand {
 
 	public static let configuration = CommandConfiguration(
 		abstract: "A utility tool for injecting secrets into Xcode projects",
-		version: "0.1.0"
+        version: PackageBuild.info.describe
 	)
 
 	@Option(help: "The .env file used to generate the files.")
@@ -27,4 +27,29 @@ struct SecretsGenerator: ParsableCommand {
 	func run() throws {
 		try Engine().run(input: self.input, output: self.output)
 	}
+}
+
+extension PackageBuild {
+
+    var describe: String {
+        guard self.digest.hasElements else {
+            return "dirty"
+        }
+
+        guard let tag = self.tag else {
+            return String(commit.prefix(8))
+        }
+
+        var desc = tag
+
+        if countSinceTag != 0 {
+            desc += "-\(countSinceTag)-g\(commit.prefix(7))"
+        }
+
+        if isDirty {
+            desc += "-dirty"
+        }
+
+        return desc
+    }
 }

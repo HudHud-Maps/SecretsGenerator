@@ -1,0 +1,60 @@
+# Disabled rules
+disabled_rules:
+  - nesting
+  - trailing_whitespace
+  - line_length
+  - unneeded_synthesized_initializer
+  - file_length
+  - function_body_length
+  - closure_parameter_position
+  - type_body_length
+# Optional Rules
+opt_in_rules:
+  - empty_count
+  - file_header
+  - force_unwrapping
+
+excluded: 
+  - build
+
+# Customised rules
+force_try:
+  severity: warning
+force_unwrapping:
+  severity: warning
+identifier_name:
+  min_length: 0
+empty_count:
+  severity: warning
+cyclomatic_complexity:
+  ignores_case_statements: true
+file_header:
+  required_pattern: |
+                    \/\/
+                    \/\/  SWIFTLINT_CURRENT_FILENAME
+                    \/\/  .*?
+                    \/\/
+                    \/\/  Created by .*? on \d{1,2}\.|/\d{1,2}\.|/\d{2,4}\.
+                    \/\/  Copyright © \d{4} HudHud\. All rights reserved\.
+                    \/\/
+custom_rules:
+  disable_fatalError:
+    included: ".*\\.swift"
+    name: "fatalError usage"
+    regex: "fatalError\\((?!\"init)"
+    match_kinds:
+      - keyword
+      - identifier
+    message: "Use assertionFailure() instead"
+    severity: error
+  init_usage:
+    name: "init() usage"
+    message: "Avoid using .init() as reviewer looses context especially in github without syntax Highlighting"
+    regex: "(?<!self|super)\\.init\\("
+    severity: warning
+  private_function_usage:
+    included: ".*\\.swift"
+    name: "private function usage"
+    regex: '\bprivate\s+func\b'
+    message: "Create a private extension of this class below"
+    severity: warning
