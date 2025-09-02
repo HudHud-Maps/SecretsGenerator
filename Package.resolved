@@ -1,13 +1,13 @@
 {
-  "originHash" : "d41f388ee489659f76f9c290533ca333d0ba13f2005ca610b1607ddae07928eb",
+  "originHash" : "3c365f5b9648f19c3a23b28c1769897bdc36a536ce98463406181535f7f5db76",
   "pins" : [
     {
       "identity" : "packagebuildinfo",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Patrick-Kladek/PackageBuildInfo",
       "state" : {
-        "branch" : "develop",
-        "revision" : "ad18f1a163ca257584d40d470fae1ccf5fc8b24b"
+        "revision" : "ad18f1a163ca257584d40d470fae1ccf5fc8b24b",
+        "version" : "1.0.0"
       }
     },
     {
