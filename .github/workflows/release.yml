@@ -3,7 +3,7 @@ name: Release
 
 # Tool name variable - change this to reuse the workflow for different tools
 env:
-  TOOL_NAME: "SecretGenerator"
+  TOOL_NAME: "SecretsGenerator"
 
 on:
   push:
