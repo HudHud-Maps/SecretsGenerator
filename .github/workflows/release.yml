@@ -1,6 +1,10 @@
 # .github/workflows/release.yml
 name: Release
 
+# Tool name variable - change this to reuse the workflow for different tools
+env:
+  TOOL_NAME: "SecretGenerator"
+
 on:
   push:
     tags:
@@ -19,8 +23,10 @@ jobs:
     name: Build macOS
     runs-on: macos-15
     steps:
-      - name: Set Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+      - name: Setup Xcode Version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -35,30 +41,69 @@ jobs:
         run: |
           swift build -c release --arch arm64
 
+      - name: Verify arm64 ${{ env.TOOL_NAME }}
+        run: .build/arm64-apple-macosx/release/${{ env.TOOL_NAME }} --version
+
       - name: Build x86_64
         run: |
           swift build -c release --arch x86_64
 
+      - name: Verify x86_64 ${{ env.TOOL_NAME }}
+        run: .build/x86_64-apple-macosx/release/${{ env.TOOL_NAME }} --version
+
       - name: Merge universal binary
         run: |
-          lipo -create -output .build/release/SecretsGenerator \
-            .build/arm64-apple-macosx/release/SecretsGenerator \
-            .build/x86_64-apple-macosx/release/SecretsGenerator
+          lipo -create -output .build/release/${{ env.TOOL_NAME }} \
+            .build/arm64-apple-macosx/release/${{ env.TOOL_NAME }} \
+            .build/x86_64-apple-macosx/release/${{ env.TOOL_NAME }}
 
       - name: Check architecture
-        run: lipo -info .build/release/SecretsGenerator
+        run: lipo -info .build/release/${{ env.TOOL_NAME }}
 
-      - name: git status
-        run: git status
-
-      - name: Run SecretsGenerator
-        run: .build/release/SecretsGenerator --version
+      - name: Run ${{ env.TOOL_NAME }}
+        run: .build/release/${{ env.TOOL_NAME }} --version
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SecretsGenerator-macOS
-          path: .build/release/SecretsGenerator
+          name: ${{ env.TOOL_NAME }}-macOS
+          path: .build/release/${{ env.TOOL_NAME }}
+
+      - name: Create Artifact Bundle
+        run: |
+          mkdir -p .build/${{ env.TOOL_NAME }}.artifactbundle
+          mkdir -p .build/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin
+          cp .build/release/${{ env.TOOL_NAME }} .build/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin/
+          
+          # Create info.json for the artifact bundle
+          cat > .build/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/info.json << EOF
+          {
+            "schemaVersion": "1.0",
+            "artifacts": {
+              "${{ env.TOOL_NAME }}": {
+                "version": "${{ github.ref_name }}",
+                "type": "executable",
+                "variants": [
+                  {
+                    "path": "bin/${{ env.TOOL_NAME }}",
+                    "supportedTriples": ["x86_64-apple-macosx", "arm64-apple-macosx"]
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+          
+          # Verify the artifact bundle structure
+          echo "Artifact bundle structure:"
+          find .build/${{ env.TOOL_NAME }}.artifactbundle/
+
+      - name: Upload Artifact Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TOOL_NAME }}.artifactbundle
+          path: .build/${{ env.TOOL_NAME }}.artifactbundle/
+          include-hidden-files: true
 
   create-release:
     name: Create GitHub Release
@@ -68,12 +113,59 @@ jobs:
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: SecretsGenerator-macOS
-          path: downloads/SecretsGenerator-macOS
+          name: ${{ env.TOOL_NAME }}-macOS
+          path: downloads/${{ env.TOOL_NAME }}-macOS
+
+      - name: Download Artifact Bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.TOOL_NAME }}.artifactbundle
+          path: downloads/${{ env.TOOL_NAME }}.artifactbundle
+
+      - name: Debug Environment and Structure
+        run: |
+          echo "=== Environment Variables ==="
+          echo "TOOL_NAME: ${{ env.TOOL_NAME }}"
+          echo "github.ref_name: ${{ github.ref_name }}"
+          echo "Current working directory: $(pwd)"
+          
+          echo "=== Downloads directory structure ==="
+          ls -la downloads/
+          echo "=== Artifact bundle structure ==="
+          ls -la downloads/${{ env.TOOL_NAME }}.artifactbundle/
+
+          echo "=== AssetGen.artifactbundle directory ==="
+          ls -la downloads/${{ env.TOOL_NAME }}.artifactbundle/ || echo "Directory not found"
+          echo "=== AssetGen directory ==="
+          ls -la downloads/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/ || echo "Directory not found"
+          echo "=== Bin directory ==="
+          ls -la downloads/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin/ || echo "Directory not found"
+          
+          echo "=== Complete directory tree ==="
+          find downloads/ -type f -o -type d | sort
+          
+          echo "=== Testing exact paths ==="
+          echo "Testing path: downloads/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin/${{ env.TOOL_NAME }}"
+          if [ -f "downloads/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin/${{ env.TOOL_NAME }}" ]; then
+            echo "✅ File exists at expected path"
+            ls -la "downloads/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin/${{ env.TOOL_NAME }}"
+          else
+            echo "❌ File NOT found at expected path"
+            echo "Looking for files with similar names..."
+            find downloads/ -type f -name "*${{ env.TOOL_NAME }}*"
+          fi
 
       - name: Make binaries executable
+        run: | 
+          chmod +x downloads/${{ env.TOOL_NAME }}-macOS/${{ env.TOOL_NAME }}
+          chmod +x downloads/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin/${{ env.TOOL_NAME }}
+
+      - name: Verify Executable Permissions
         run: |
-          chmod +x downloads/SecretsGenerator-macOS/SecretsGenerator
+          echo "=== macOS binary permissions ==="
+          ls -la downloads/${{ env.TOOL_NAME }}-macOS/${{ env.TOOL_NAME }}
+          echo "=== Artifact bundle binary permissions ==="
+          ls -la downloads/${{ env.TOOL_NAME }}.artifactbundle/${{ env.TOOL_NAME }}/bin/${{ env.TOOL_NAME }}
 
       - name: List Downloads
         run: ls -R downloads
@@ -81,7 +173,10 @@ jobs:
       - name: Package Binaries
         run: |
           mkdir -p artifacts
-          zip -j artifacts/SecretsGenerator.zip downloads/SecretsGenerator-macOS/SecretsGenerator
+          zip -j artifacts/${{ env.TOOL_NAME }}-macOS.zip downloads/${{ env.TOOL_NAME }}-macOS/${{ env.TOOL_NAME }}
+          cd downloads
+          zip -r ../artifacts/${{ env.TOOL_NAME }}.artifactbundle.zip ${{ env.TOOL_NAME }}.artifactbundle
+          cd ..
 
       - name: List artifacts
         run: ls -R artifacts
@@ -93,6 +188,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           generate_release_notes: true
           files: |
-            artifacts/SecretsGenerator.zip
+            artifacts/${{ env.TOOL_NAME }}-macOS.zip
+            artifacts/${{ env.TOOL_NAME }}.artifactbundle.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

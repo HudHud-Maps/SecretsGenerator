@@ -1,13 +1,13 @@
 {
-  "originHash" : "b483b28fb0e0f4a1ff374e99154ed2ce32c581b0986b8e6a1bddc1706295816a",
+  "originHash" : "d41f388ee489659f76f9c290533ca333d0ba13f2005ca610b1607ddae07928eb",
   "pins" : [
     {
       "identity" : "packagebuildinfo",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/DimaRU/PackageBuildInfo",
+      "location" : "https://github.com/Patrick-Kladek/PackageBuildInfo",
       "state" : {
-        "branch" : "master",
-        "revision" : "b58288cada24fdaaedaaa329afe52d910794fdb2"
+        "branch" : "develop",
+        "revision" : "ad18f1a163ca257584d40d470fae1ccf5fc8b24b"
       }
     },
     {

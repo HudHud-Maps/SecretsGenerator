@@ -28,28 +28,3 @@ struct SecretsGenerator: ParsableCommand {
 		try Engine().run(input: self.input, output: self.output)
 	}
 }
-
-extension PackageBuild {
-
-    var describe: String {
-        guard self.digest.hasElements else {
-            return "dirty"
-        }
-
-        guard let tag = self.tag else {
-            return String(commit.prefix(8))
-        }
-
-        var desc = tag
-
-        if countSinceTag != 0 {
-            desc += "-\(countSinceTag)-g\(commit.prefix(7))"
-        }
-
-        if isDirty {
-            desc += "-dirty"
-        }
-
-        return desc
-    }
-}
