@@ -36,9 +36,9 @@ private extension Engine {
 
 import Foundation
 
-enum Secrets {
+public enum Secrets {
 	{% for secret in secrets %}
-	static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
+    public static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
 	{% endfor %}
 	private static func _xored(_ secret: [UInt8], salt: [UInt8]) -> String {
 		return String(bytes: secret.enumerated().map { index, character in
