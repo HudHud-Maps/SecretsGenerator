@@ -22,7 +22,13 @@ extension SecretsGeneratorPlugin: BuildToolPlugin {
 			.buildCommand(
 				displayName: "Generating Secrets from .env",
 				executable: context.tool(named: "SecretsGenerator").url,
-				arguments: ["--input", inputPath.path(), "--output", outputPath.path()]
+				arguments: ["--input", inputPath.path(), "--output", outputPath.path()],
+                inputFiles: [
+                    inputPath
+                ],
+                outputFiles: [
+                    outputPath
+                ]
 			)
 		]
 	}
