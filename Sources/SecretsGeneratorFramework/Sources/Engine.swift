@@ -12,14 +12,21 @@ public struct Engine {
 
 	public init() {}
 
-	public func run(input: URL, output: URL) throws {
-		let dict = try Dotenv().parse(url: input)
-
-		let secrets = dict.map {
+    public func run(input: URL, debug: URL?, output: URL) throws {
+        var context: [String: Any] = [:]
+        let secrets = try Dotenv().parse(url: input).map {
 			return Secret(name: $0.key.toCamelCase(), value: $0.value)
 		}
+        context["secrets"] = secrets
 
-		let rendered = try generateCode(from: ["secrets": secrets])
+        if let debug {
+            let secretsDebug = try Dotenv().parse(url: debug).map {
+                return Secret(name: $0.key.toCamelCase(), value: $0.value)
+            }
+            context["debug"] = secretsDebug
+        }
+
+		let rendered = try generateCode(from: context)
 
 		try rendered.write(to: output, atomically: true, encoding: .utf8)
 	}
@@ -40,6 +47,11 @@ public enum Secrets {
 	{% for secret in secrets %}
     public static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
 	{% endfor %}
+#if DEBUG
+    {% for secret in debug %}
+    public static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
+    {% endfor %}
+#endif
 	private static func _xored(_ secret: [UInt8], salt: [UInt8]) -> String {
 		return String(bytes: secret.enumerated().map { index, character in
 			return character ^ salt[index % salt.count]

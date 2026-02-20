@@ -21,10 +21,13 @@ struct SecretsGenerator: ParsableCommand {
 	var input: URL = URL(fileURLWithPath: ".env",
 						 relativeTo: FileManager.default.currentDirectoryURL)
 
+    @Option(help: "The .env.debug file used to generate the files.")
+    var debug: URL?
+
 	@Option(help: "Output url of the generated file.")
 	var output: URL
 
 	func run() throws {
-		try Engine().run(input: self.input, output: self.output)
+        try Engine().run(input: self.input, debug: self.debug, output: self.output)
 	}
 }
