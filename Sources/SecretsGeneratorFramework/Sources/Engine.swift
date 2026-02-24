@@ -10,21 +10,35 @@ import Stencil
 
 public struct Engine {
 
+	struct File {
+		let name: String
+		let secrets: [Secret]
+	}
+
 	public init() {}
 
-    public func run(input: URL, debug: URL?, output: URL) throws {
-        var context: [String: Any] = [:]
-        let secrets = try Dotenv().parse(url: input).map {
-			return Secret(name: $0.key.toCamelCase(), value: $0.value)
-		}
-        context["secrets"] = secrets
+	public func run(inputs: [URL], output: URL) throws {
+		var context: [String: Any] = [:]
+		var files: [File] = []
 
-        if let debug {
-            let secretsDebug = try Dotenv().parse(url: debug).map {
-                return Secret(name: $0.key.toCamelCase(), value: $0.value)
-            }
-            context["debug"] = secretsDebug
-        }
+		for input in inputs {
+			if input.lastPathComponent == ".env" {
+				let secrets = try Dotenv().parse(url: input).map {
+					return Secret(name: $0.key.toCamelCase(), value: $0.value)
+				}
+				context["secrets"] = secrets
+			} else {
+				var name = input.lastPathComponent
+				name.trimPrefix(".env.")
+
+				let secrets = try Dotenv().parse(url: input).map {
+					return Secret(name: $0.key.toCamelCase(), value: $0.value)
+				}
+
+				files.append(File(name: name, secrets: secrets))
+			}
+		}
+		context["files"] = files
 
 		let rendered = try generateCode(from: context)
 
@@ -44,19 +58,23 @@ private extension Engine {
 import Foundation
 
 public enum Secrets {
-	{% for secret in secrets %}
-    public static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
+ {% for secret in secrets %}
+	public static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
+ {% endfor %}
+
+{% for file in files %}
+#if {{ file.name|uppercase }}
+	{% for secret in file.secrets %}
+	public static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
 	{% endfor %}
-#if DEBUG
-    {% for secret in debug %}
-    public static let {{ secret.key }}: String = Secrets._xored({{ secret.secret }}, salt: {{ secret.salt}})
-    {% endfor %}
 #endif
-	private static func _xored(_ secret: [UInt8], salt: [UInt8]) -> String {
-		return String(bytes: secret.enumerated().map { index, character in
-			return character ^ salt[index % salt.count]
-		}, encoding: .utf8) ?? ""
-	}
+{% endfor %}
+
+ private static func _xored(_ secret: [UInt8], salt: [UInt8]) -> String {
+  return String(bytes: secret.enumerated().map { index, character in
+   return character ^ salt[index % salt.count]
+  }, encoding: .utf8) ?? ""
+ }
 }
 """
 	}
