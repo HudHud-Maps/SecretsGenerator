@@ -17,14 +17,20 @@ extension SecretsGeneratorPlugin: BuildToolPlugin {
 	func createBuildCommands(context: PluginContext, target _: Target) throws -> [Command] {
         let inputPath = context.package.directoryURL.appending(path: ".env")
 		let debugPath = context.package.directoryURL.appending(path: ".env.debug")
+        let outputPath = context.pluginWorkDirectoryURL.appending(path: "GeneratedSources").appending(path: "Secrets.swift")
 
-		let outputPath = context.pluginWorkDirectoryURL.appending(path: "GeneratedSources").appending(path: "Secrets.swift")
+        var arguments: [String] = ["--input", inputPath.path(), "--output", outputPath.path()]
+
+        if FileManager.default.fileExists(atPath: debugPath.path) {
+            arguments.append("--debug")
+            arguments.append(debugPath.path())
+        }
 
 		return try [
 			.buildCommand(
 				displayName: "Generating Secrets from .env",
 				executable: context.tool(named: "SecretsGenerator").url,
-                arguments: ["--input", inputPath.path(), "--debug", debugPath.path(), "--output", outputPath.path()],
+                arguments: arguments,
                 inputFiles: [
                     inputPath
                 ],
